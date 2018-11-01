@@ -1,75 +1,82 @@
-// arrayParser step2(2중 중첩 배열 분석) modified 1
+// arrayParser step3(무한 중첩된 배열구조) 
 
 const arrayParser = {
 
-    // 분석된 문자열 데이터(줄기)
-    stem: [],
+    stack: [],
 
-    // 배열의 깊이(-1부터 시작)
-    depth: -1,
-
-
-    checkDataType(targetStr, ch) {
-        if (!(ch === "[" && targetStr[0] === '[' && targetStr[targetStr.length - 1] === ']')) return;
-        this.depth++;
-        this.stem[this.depth] = {};
-        this.stem[this.depth].child = [];
-        this.stem[this.depth].type = 'array';
-        this.stem[this.depth].value = 'ArrayObject';
-
-    },
-
-    // 문자열 해체 메소드
-    getAnalyzedStem(targetStr) {
+    separateStringByLexer(targetStr) {
+        let mainBranch = {}; // 분석 결과
         let extractedNum = "";
         for (let ch of targetStr) {
-            
-            this.checkDataType(targetStr, ch);
-
+            if (ch === "[") {
+                mainBranch = this.checkBrace(mainBranch);
+            }
             if (!isNaN(Number(ch))) { // 숫자형식의 문자열을 인식하여 추출
                 extractedNum += ch;
-                targetStr = targetStr.replace(ch, "");
 
             } else if (ch === "," && extractedNum !== "") { // 분석할 문자열을 추출한 경우 ','를 만나면 분석 메소드 호출
-                this.analyzeStr(extractedNum);
+                this.analyzeStringByParser(extractedNum);
                 extractedNum = "";
 
             } else if (ch === "]" && extractedNum !== "") { // 분석할 문자열을 추출한 경우 ']'를 만나면 분석 메소드 호출
-                this.analyzeStr(extractedNum);
+                this.analyzeStringByParser(extractedNum);
                 extractedNum = "";
-                this.depth--;
+                this.accumulatedObj = this.stack.pop();
 
-            } else if (ch === "]" && extractedNum === "") { // 분석할 문자열이 없는 경우 : ex( ]] )
-                this.depth--;
+            } else if (ch === "]" && extractedNum === "") { // 분석할 문자열이 없는 경우
+                this.accumulatedObj = this.stack.pop();
             }
         }
-        return this.printArrayStem(this.stem); // 분석 결과 출력 메소드
+        return mainBranch;
     },
 
-    // 추출 문자열 분석 메소드
-    analyzeStr(extractedNum) {
-        const childObj = {};
-        childObj.type = typeof Number(extractedNum);
-        childObj.value = extractedNum;
-        childObj.child = [];
-        this.stem[this.depth].child.push(childObj);
-    },
-
-    // 분석 결과 출력 메소드
-    printArrayStem(stem) {
-        for (let i = stem.length - 1; i > 0; i--) {
-            stem[i - 1].child.push(stem[i]);
+    checkBrace(mainBranch) {
+        if (!mainBranch.hasOwnProperty("child")) {
+            return this.initializeMainBranch(mainBranch);
+        } else {
+            this.addSideBranch();
+            return mainBranch;
         }
-        return stem;
-    }
+    },
+
+    initializeMainBranch(mainBranch) {
+        this.accumulatedObj = {};
+            mainBranch.type = 'array';
+            mainBranch.value = 'ArrayObject';
+            mainBranch.child = [];
+        this.accumulatedObj = mainBranch;
+        return mainBranch;
+    },
+
+    addSideBranch() {
+        const sideBranch = {};
+            sideBranch.type = 'array';
+            sideBranch.value = 'ArrayObject';
+            sideBranch.child = [];
+
+        this.stack.push(this.accumulatedObj);
+
+        let accumulatedObj = this.accumulatedObj.child;
+        accumulatedObj.push(sideBranch);
+        this.accumulatedObj = accumulatedObj[accumulatedObj.length - 1];
+    },
+
+    analyzeStringByParser(extractedNum) {
+        const childObj = {};
+            childObj.type = typeof Number(extractedNum);
+            childObj.value = extractedNum;
+            childObj.child = [];
+
+        this.accumulatedObj.child.push(childObj);
+    },
 
 } // end arrayParser 
 
-// 분석 대상 문자열 데이터
-let targetStr = '[123,[22,23,[11,[112233],112],55],33]]';
-//let targetStr = '[1,2,3,4,5,[6]]'
-//let targetStr = '[10,[20,30,[40,50,60,70]]]';
-//let targetStr = '[10,[20,[30,[40,[50,[60,[70,[80,[90,[100]]]]]]]]]]';
-
-let analyzedStem = arrayParser.getAnalyzedStem(targetStr)[0];
-console.log(JSON.stringify(analyzedStem, null, 4));
+console.log(JSON.stringify(arrayParser.separateStringByLexer('[1,2,3,4,5]'), null, 4));
+console.log(JSON.stringify(arrayParser.separateStringByLexer('[1,[2,3],[4,5]]'), null, 4));
+console.log(JSON.stringify(arrayParser.separateStringByLexer('[123,[22],33,[1,2,3,4,5]]'), null, 4));
+console.log(JSON.stringify(arrayParser.separateStringByLexer('[10,[20,30,[40,50,60,70]]]'), null, 4));
+console.log(JSON.stringify(arrayParser.separateStringByLexer('[10,[20,[30,[40,[50,[60,[70,[80,[90,[100]]]]]]]]]]'), null, 4));
+console.log(JSON.stringify(arrayParser.separateStringByLexer('[[[[[[[[8]],7]]],6]]]'), null, 4));
+console.log(JSON.stringify(arrayParser.separateStringByLexer('[10,11,[[20,21]],[[[[[[[[[90]]]]]]]]],[[22,23]]]'), null, 4));
+console.log(JSON.stringify(arrayParser.separateStringByLexer('[10,[20,21,[30,31,32],233333],11,12,13,[22,[33,[40],34],23,24],14,15]'), null, 4));
