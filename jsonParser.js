@@ -6,53 +6,66 @@ class JSONData {
     }
 }
 
-const array = '[123,"hallo",33]'
+const array = "[123,[22, 33],44,[1,2,3], 11]".replace(/ /gi, '')
 
-function arrayParser(array) {
-    str = array.replace(/ /gi, "");
-    let type = getType(str)
-    let value = getValue(str)
-    let child = getChild(value)
-    let result = new JSONData(type, value, child)
-    printResult(result)
-}
-
-function getType(str) {
-    if (str.indexOf('[') === -1) {
-        if (!isNaN(str)) {
-            return 'number';
-        } else {
-            return 'string';
-        }
-    } else {
-        return 'array '
+function ArrayParser(array) {
+    const WholeDataQueue = [];
+    while (array.length !== 0) {
+        debugger;
+        //토큰 자르고 토큰wholeDataqueue 에 넣고
+        const token = getToken(array)
+        queuePusher(token, WholeDataQueue)
+        array = array.replace(token, '')
     }
-};
-
-function getValue(str) {
-    if (str.indexOf('[') !== -1) {
-        return str.slice(str.indexOf('[') + 1, str.lastIndexOf(']'))
+    return analyzeQueue(WholeDataQueue)
+}
+function getToken(string) {
+    //, [ or ]가 나오면 따로뽑아냄
+    if (string[0] === '[' || string[0] === ',' || string[0] === ']') {
+        return string.slice(0, 1)
+    } else if (string.indexOf(']') < string.indexOf(',')) {
+        return string.slice(0, string.indexOf(']'))
+    } else if (string.indexOf(',') === -1) {
+        return string.slice(0, string.indexOf(']'))
     } else {
-        return str.slice(0, str.length)
+        return string.slice(0, string.indexOf(','))
     }
 }
-
-function getChild(str) {
-    child = []
-    while (str.indexOf(',') !== -1) {
-        var value = str.slice(0, str.indexOf(','))
-        child.push(new JSONData(getType(value), value, []))
-        str = str.slice(str.indexOf(',') + 1, str.length)
-        if (str.indexOf(',') === -1) {
-            child.push(new JSONData(getType(str), str, []))
+function queuePusher(token, queue) {
+    queue.push(token)
+    return queue
+}
+function queueShifter(queue) {
+    return queue.shift()
+}
+function analyzeQueue(queue) {
+    debugger;
+    while (queue.length !== 0) {
+        const value = queueShifter(queue)
+        if (value === '[') {
+            const child = getChild(queue, value)
+            return new JSONData('array', 'array Object', child)
         }
-        console.log(str)
+    }
+}
+function getChild(queue, valueIn) {
+    let child = []
+    while (valueIn !== ']') {
+        let valueIn = queueShifter(queue)
+        if (valueIn === '[') {
+            child.push(new JSONData('Array', 'object Array', getChild(queue, valueIn)))
+            continue;
+        } else if (valueIn === ',') {
+            continue;
+        } else if (valueIn === ']') {
+            break;
+        }
+        child.push(new JSONData('Number', valueIn, []))
     }
     return child
 }
-
-function printResult(result) {
-    console.log(result)
+function printJSONData(JSONData) {
+    console.log(JSON.stringify(JSONData, null, 2))
 }
 
-arrayParser(array)
+printJSONData(ArrayParser(array))
