@@ -6,66 +6,74 @@ class JSONData {
     }
 }
 
-const array = "[123,[22, 33],44,[1,2,3], 11]".replace(/ /gi, '')
+const sentence = "[123,[22,[33]],44,[1,2,3],11]".replace(/ /gi, '')
 
-function ArrayParser(array) {
-    const WholeDataQueue = [];
-    while (array.length !== 0) {
-        debugger;
-        //토큰 자르고 토큰wholeDataqueue 에 넣고
-        const token = getToken(array)
-        queuePusher(token, WholeDataQueue)
-        array = array.replace(token, '')
+class Tokenize {
+    constructor() {
+        this.wholeDataQueue = [];
     }
-    return analyzeQueue(WholeDataQueue)
-}
-function getToken(string) {
-    //, [ or ]가 나오면 따로뽑아냄
-    if (string[0] === '[' || string[0] === ',' || string[0] === ']') {
-        return string.slice(0, 1)
-    } else if (string.indexOf(']') < string.indexOf(',')) {
-        return string.slice(0, string.indexOf(']'))
-    } else if (string.indexOf(',') === -1) {
-        return string.slice(0, string.indexOf(']'))
-    } else {
-        return string.slice(0, string.indexOf(','))
+    
+    getWholeDataQueue(sentence) {
+        while(sentence.length !== 0) {
+            const token = this.getToken(sentence)
+            this.wholeDataQueue.push(token)
+            sentence = sentence.replace(token, '')
+        }
+        return this.wholeDataQueue
     }
-}
-function queuePusher(token, queue) {
-    queue.push(token)
-    return queue
-}
-function queueShifter(queue) {
-    return queue.shift()
-}
-function analyzeQueue(queue) {
-    debugger;
-    while (queue.length !== 0) {
-        const value = queueShifter(queue)
-        if (value === '[') {
-            const child = getChild(queue, value)
-            return new JSONData('array', 'array Object', child)
+
+    getToken(str) {
+        if (str[0] === '[' || str[0] === ',' || str[0] === ']') {
+            return str.slice(0, 1)
+        } else if (str.indexOf(']') < str.indexOf(',')) {
+            return str.slice(0, str.indexOf(']'))
+        } else if (str.indexOf(',') === -1) {
+            return str.slice(0, str.indexOf(']'))
+        } else {
+            return str.slice(0, str.indexOf(','))
         }
     }
 }
-function getChild(queue, valueIn) {
-    let child = []
-    while (valueIn !== ']') {
-        let valueIn = queueShifter(queue)
-        if (valueIn === '[') {
-            child.push(new JSONData('Array', 'object Array', getChild(queue, valueIn)))
-            continue;
-        } else if (valueIn === ',') {
-            continue;
-        } else if (valueIn === ']') {
-            break;
-        }
-        child.push(new JSONData('Number', valueIn, []))
+
+class Analyze {
+    constructor(queue) {
+        this.queueArr = queue
     }
-    return child
+    
+    queue() {
+        while(this.queueArr.length !== 0) {
+            const value = this.queueArr.shift()
+            if(value === '[') {
+                const child = this.getChild(this.queueArr, value)
+                return new JSONData('Array', 'Array Object', child)
+            }
+        }
+    }
+
+    getChild(queueArr, checkingValue) {
+        let child = [];
+        while (checkingValue !== ']') {
+            checkingValue = queueArr.shift()
+            if(checkingValue === '[') {
+                child.push(new JSONData('Array', 'Object Array', this.getChild(queueArr, checkingValue)))
+                continue;
+            } else if (checkingValue === ',') {
+                continue;
+            } else if (checkingValue === ']') {
+                break;
+            }
+            child.push(new JSONData('Number', checkingValue, []))
+        }
+        return child
+    }
 }
+
 function printJSONData(JSONData) {
     console.log(JSON.stringify(JSONData, null, 2))
 }
 
-printJSONData(ArrayParser(array))
+const tokenize = new Tokenize
+const tokenizedDataArr = tokenize.getWholeDataQueue(sentence)
+const analyze = new Analyze(tokenizedDataArr)
+const jsonData = analyze.queue()
+printJSONData(jsonData)
