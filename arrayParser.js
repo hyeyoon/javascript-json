@@ -22,9 +22,24 @@ const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(
 // 텍스트를 seperator 기준으로 split하는 함수
 const splitText = str => str.split(data.seperator);
 
+// Array가 함수인지 확인하는 함수
+const checkIsArray = splitList => {
+  if (splitList[0] === '[' && splitList[splitList.length - 1] === ']') {
+    data.parsedData.type = 'array';
+    const filteredList = splitList.filter(item => {
+      return item !== splitList[0] && item !== splitList[splitList.length - 1] && item !== " ";
+    })
+    return filteredList;
+  } else {
+    console.log('숫자데이터로 이루어진 배열형태의 문자열을 입력하세요.');
+  }
+};
+
 const ArrayParser = pipe(
   splitText,
+  checkIsArray,
 )
+
 
 
 var str = "[123, 22, 32]";
