@@ -36,19 +36,7 @@ const checkIsArray = splitList => {
 };
 
 const extractChild = filteredList => {
-  const newList = [];
-  let item = [];
-  tokenList.forEach((token) => {
-    if (token === ',') {
-      newList.push(item.join(''));
-      item = [];
-    }
-    else {
-      item.push(token);
-    }
-  })
-  newList.push(item.join(''));
-  return newList
+  return filteredList.join("").split(",");
 }
 
 const ArrayParser = pipe(
