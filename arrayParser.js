@@ -33,10 +33,12 @@ const checkIsArray = splitList => {
   } else errorMsg();
 };
 
+// 하위 데이터를 추출하는 함수
 const extractChild = filteredList => {
   return filteredList.join("").split(",");
 }
 
+// 결과를 출력하는 함수
 const printData = analyzedList => {
   const result = analyzedList.map(item => {
     return {
@@ -48,12 +50,14 @@ const printData = analyzedList => {
   return JSON.stringify(data.parsedData, null, 2);
 }
 
+// 타입 체크하는 함수
 const checkType = token => {
   const isNumber = /^\d+$/;
   if (token.match(isNumber)) return 'number';
   else errorMsg();
 }
 
+// 에러 메세지 출력하는 함수 
 const errorMsg = () => {
   return console.error('숫자데이터로 이루어진 배열형태의 문자열을 입력하세요.');
 }
