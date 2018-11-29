@@ -16,7 +16,15 @@ const data = {
     child: []
   }
 }
+// pipe 함수
+const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(arg), args);
 
+// 텍스트를 seperator 기준으로 split하는 함수
+const splitText = str => str.split(data.seperator);
+
+const ArrayParser = pipe(
+  splitText,
+)
 
 
 var str = "[123, 22, 32]";
