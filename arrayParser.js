@@ -30,25 +30,43 @@ const checkIsArray = splitList => {
       return item !== splitList[0] && item !== splitList[splitList.length - 1] && item !== " ";
     })
     return filteredList;
-  } else {
-    console.log('숫자데이터로 이루어진 배열형태의 문자열을 입력하세요.');
-  }
+  } else errorMsg();
 };
 
 const extractChild = filteredList => {
   return filteredList.join("").split(",");
 }
 
+const printData = analyzedList => {
+  const result = analyzedList.map(item => {
+    return {
+      type: checkType(item),
+      value: item
+    }
+  })
+  data.parsedData = result;
+  return JSON.stringify(data.parsedData, null, 2);
+}
+
+const checkType = token => {
+  const isNumber = /^\d+$/;
+  if (token.match(isNumber)) return 'number';
+  else errorMsg();
+}
+
+const errorMsg = () => {
+  return console.error('숫자데이터로 이루어진 배열형태의 문자열을 입력하세요.');
+}
+
 const ArrayParser = pipe(
   splitText,
   checkIsArray,
-  extractChild
+  extractChild,
+  printData,
 )
 
-
-
-var str = "[123, 22, 32]";
-var result = ArrayParser(str);
+const str = "[123, 22, 32]";
+const result = ArrayParser(str);
 console.log('result:', result);
 // console.log(JSON.stringify(result, null, 2));
 
