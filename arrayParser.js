@@ -8,9 +8,10 @@
  *  - 정규표현식 사용은 최소한으로 한다.(token의 타입체크에 한해 사용가능)
  */
 
+// 배열 여부를 확인하는 함수 추가 ([,] 로 이루어진 요소인지 확인)
+
 // number, boolean, string, array, object, function
 const data = {
-  seperator: '',
   parsedData: {
     type: '',
     child: []
@@ -19,23 +20,42 @@ const data = {
 // pipe 함수
 const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(arg), args);
 
-// 텍스트를 seperator 기준으로 split하는 함수
-const splitText = str => str.split(data.seperator);
+// 텍스트를 split하는 함수
+const splitText = (seperator, str) => {
+  return str.split(seperator)
+};
 
 // Array가 함수인지 확인하는 함수
 const checkIsArray = splitList => {
-  if (splitList[0] === '[' && splitList[splitList.length - 1] === ']') {
-    data.parsedData.type = 'array';
-    const filteredList = splitList.filter(item => {
-      return item !== splitList[0] && item !== splitList[splitList.length - 1] && item !== " ";
-    })
-    return filteredList;
-  } else errorMsg();
+  if (checker.isArray) {
+    return pipe(
+      removeBracket,
+      trimArray
+    )(splitList)
+  }
 };
 
+// 대괄호를 제외한 리스트를 리턴하는 함수
+const removeBracket = arrayList => arrayList.filter(item => item !== arrayList[0] && item !== arrayList[arrayList.length - 1]);
+
+// 배열 중 공백을 제외한 token을 리턴하는 함수
+const trimArray = list => list.filter(item => item !== " ");
+
+// 변수 타입 확인하는 함수
+const checker = {
+  isArray(item) {
+    if (item[0] === '[' && item[item.length - 1] === ']') return true;
+    else errorMsg();
+  },
+  isNumber(item) {
+    if (item.match(/^\d+$/)) return 'number';
+    else errorMsg();
+  }
+}
+
 // 하위 데이터를 추출하는 함수
-const extractChild = filteredList => {
-  return filteredList.join("").split(",");
+const extractChild = (joinSeperator, splitSeperator, filteredList) => {
+  return filteredList.join(joinSeperator).split(splitSeperator);
 }
 
 // 결과를 출력하는 함수
@@ -57,15 +77,15 @@ const checkType = token => {
   else errorMsg();
 }
 
-// 에러 메세지 출력하는 함수 
+// 에러 메세지 출력하는 함수
 const errorMsg = () => {
   return console.error('숫자데이터로 이루어진 배열형태의 문자열을 입력하세요.');
 }
 
 const ArrayParser = pipe(
-  splitText,
+  splitText.bind(undefined, ""),
   checkIsArray,
-  extractChild,
+  extractChild.bind(undefined, "", ","),
   printData,
 )
 
