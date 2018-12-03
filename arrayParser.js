@@ -27,35 +27,52 @@ const splitText = (seperator, str) => {
 
 // Array가 함수인지 확인하는 함수
 const checkIsArray = splitList => {
-  if (checker.isArray) {
+  if (checker.isArray(splitList) === 'array') {
     return pipe(
       removeBracket,
-      trimArray
+      trimList
     )(splitList)
   }
 };
 
 // 대괄호를 제외한 리스트를 리턴하는 함수
-const removeBracket = arrayList => arrayList.filter(item => item !== arrayList[0] && item !== arrayList[arrayList.length - 1]);
+const removeBracket = arrayList => {
+  return arrayList.slice(1,-1)
+};
 
 // 배열 중 공백을 제외한 token을 리턴하는 함수
-const trimArray = list => list.filter(item => item !== " ");
+const trimList = list => {
+  return list.filter(item => item !== " ")
+};
 
 // 변수 타입 확인하는 함수
 const checker = {
   isArray(item) {
-    if (item[0] === '[' && item[item.length - 1] === ']') return true;
-    else errorMsg();
+    if (item[0] === '[' && item[item.length - 1] === ']') return 'array';
+    else console.error('숫자데이터로 이루어진 배열 형태의 문자열을 입력하세요.');
   },
   isNumber(item) {
     if (item.match(/^\d+$/)) return 'number';
-    else errorMsg();
+    else console.error('숫자데이터로 이루어진 배열 형태의 문자열을 입력하세요.');
   }
 }
 
 // 하위 데이터를 추출하는 함수
 const extractChild = (joinSeperator, splitSeperator, filteredList) => {
+  // join 한 후에, 상위 , 를 기준으로 쪼개야 함
   return filteredList.join(joinSeperator).split(splitSeperator);
+  // const newList = [];
+  // const item = [];
+  // for (let i=0; i < filteredList.length; i++) {
+  //   if (i !== '[' && i!== '{' && i !== ',') {
+  //     item.push(filteredList[i]);
+  //   } else if (i === ',') {
+  //     newList.push(item.join(''));
+  //     item = [];
+  //   } else if (i === '[') {
+  //
+  //   }
+  // }
 }
 
 // 결과를 출력하는 함수
@@ -74,7 +91,7 @@ const printData = analyzedList => {
 const checkType = token => {
   const isNumber = /^\d+$/;
   if (token.match(isNumber)) return 'number';
-  else errorMsg();
+  else console.error('숫자데이터로 이루어진 배열 형태의 문자열을 입력하세요.');
 }
 
 // 에러 메세지 출력하는 함수
@@ -89,7 +106,7 @@ const ArrayParser = pipe(
   printData,
 )
 
-const str = "[123, 22, 32]";
+const str = "[123, 22, [[256, 2]], 32]";
 const result = ArrayParser(str);
 console.log('result:', result);
 // console.log(JSON.stringify(result, null, 2));
