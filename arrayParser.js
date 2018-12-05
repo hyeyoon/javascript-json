@@ -10,14 +10,6 @@
 
 // 배열 여부를 확인하는 함수 추가 ([,] 로 이루어진 요소인지 확인)
 
-// number, boolean, string, array, object, function
-const data = {
-  parsedData: {
-    type: '',
-    value: '',
-    child: [],
-  },
-}
 // pipe 함수
 const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(arg), args);
 
@@ -33,7 +25,7 @@ const checkIsArray = splitList => {
       removeBracket,
       trimList
     )(splitList)
-  }
+  } else console.error('배열형태의 문자열을 입력해주세요.');
 };
 
 // 대괄호를 제외한 리스트를 리턴하는 함수
@@ -59,32 +51,39 @@ const checker = {
   }
 }
 
-const groupChild = (splitList) => {
+const tokenizeList = (splitList) => {
   let tmp = '';
   const newList = [];
   let calcArrBrackets = 0;
   splitList.forEach(token => {
-    if (token === '[') {
-      ++calcArrBrackets;
-      tmp += token;
-    } else if (checker.isComma(token) && calcArrBrackets === 0) {
+    if (checker.isComma(token) && calcArrBrackets === 0) {
       tmp && newList.push(tmp);
       tmp = ''
-    } else if (token === ']') {
-      --calcArrBrackets;
-      if (calcArrBrackets === 0) {
-        tmp += token;
-        newList.push(tmp);
-        tmp = ''
-      } else {
-        tmp += token;
-      }
+    } else if (token === ']' && calcArrBrackets === 0) {
+      tmp += token;
+      newList.push(tmp);
+      tmp = ''
     } else {
+      token === '[' && ++calcArrBrackets;
+      token === ']' && --calcArrBrackets;
       tmp += token;
     }
   })
   tmp && newList.push(tmp);
   return newList;
+}
+
+const parseData = (splitList) => {
+  return splitList.reduce(parseReducer, makeChild('array', 'ArrayObject'))
+}
+
+const parseReducer = (prev, curr) => {
+  if (checker.isArray(curr)) {
+    prev.child.push(ArrayParser(curr))
+  } else {
+    prev.child.push(makeChild('number', curr));
+  }
+  return prev
 }
 
 const makeChild = (type, value) => {
@@ -98,14 +97,13 @@ const makeChild = (type, value) => {
 const ArrayParser = pipe(
   splitText,
   checkIsArray,
-  groupChild,
-  tokenizeData,
+  tokenizeList,
+  parseData,
 )
 
 const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
 const result = ArrayParser(str);
-console.log('result:', result);
-// console.log(JSON.stringify(result, null, 2));
+console.log('result:', JSON.stringify(result, null, 2));
 
 // { type: 'array',
 //   child:
