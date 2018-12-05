@@ -12,30 +12,34 @@
 
 // number, boolean, string, array, object, function
 const data = {
-  parsedData: '',
+  parsedData: {
+    type: '',
+    value: '',
+    child: [],
+  },
 }
 // pipe 함수
 const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(arg), args);
 
 // 텍스트를 split하는 함수
-const splitText = (seperator, str) => {
-  return str.split(seperator)
+const splitText = (str) => {
+  return str.split("")
 };
 
 // Array가 함수인지 확인하는 함수
-// const checkIsArray = splitList => {
-//   if (checker.isArray(splitList) === 'array') {
-//     return pipe(
-//       removeBracket,
-//       trimList
-//     )(splitList)
-//   }
-// };
+const checkIsArray = splitList => {
+  if (checker.isArray(splitList) === 'array') {
+    return pipe(
+      removeBracket,
+      trimList
+    )(splitList)
+  }
+};
 
 // 대괄호를 제외한 리스트를 리턴하는 함수
-// const removeBracket = arrayList => {
-//   return arrayList.slice(1,-1)
-// };
+const removeBracket = arrayList => {
+  return arrayList.slice(1,-1)
+};
 
 // 배열 중 공백을 제외한 token을 리턴하는 함수
 const trimList = list => {
@@ -46,34 +50,59 @@ const trimList = list => {
 const checker = {
   isArray(item) {
     if (item[0] === '[' && item[item.length - 1] === ']') return 'array';
-    else console.error('숫자데이터로 이루어진 배열 형태의 문자열을 입력하세요.');
   },
   isNumber(item) {
     if (item.match(/^\d+$/)) return 'number';
-    else console.error('숫자데이터로 이루어진 배열 형태의 문자열을 입력하세요.');
   },
   isComma(item) {
     if (item === ',') return 'comma';
   }
 }
 
-// 하위 데이터를 추출하는 함수
-const extractChild = (parent, dataList) => {
-
+const groupChild = (splitList) => {
+  let tmp = '';
+  const newList = [];
+  let calcArrBrackets = 0;
+  splitList.forEach(token => {
+    if (token === '[') {
+      ++calcArrBrackets;
+      tmp += token;
+    } else if (checker.isComma(token) && calcArrBrackets === 0) {
+      tmp && newList.push(tmp);
+      tmp = ''
+    } else if (token === ']') {
+      --calcArrBrackets;
+      if (calcArrBrackets === 0) {
+        tmp += token;
+        newList.push(tmp);
+        tmp = ''
+      } else {
+        tmp += token;
+      }
+    } else {
+      tmp += token;
+    }
+  })
+  tmp && newList.push(tmp);
+  return newList;
 }
 
-// 결과를 출력하는 함수
-const printData = data => {
-  return JSON.stringify(data, null, 2);
+const makeChild = (type, value) => {
+  return {
+    type: type,
+    value: value,
+    child: [],
+  }
 }
 
 const ArrayParser = pipe(
-  splitText.bind(undefined, ""),
-  extractChild.bind(undefined, data.parsedArray),
-  // printData,
+  splitText,
+  checkIsArray,
+  groupChild,
+  tokenizeData,
 )
 
-const str = "[123,[22],33, [1,[2,3],4,5]]";
+const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
 const result = ArrayParser(str);
 console.log('result:', result);
 // console.log(JSON.stringify(result, null, 2));
