@@ -8,71 +8,102 @@
  *  - 정규표현식 사용은 최소한으로 한다.(token의 타입체크에 한해 사용가능)
  */
 
-// number, boolean, string, array, object, function
-const data = {
-  seperator: '',
-  parsedData: {
-    type: '',
-    child: []
-  }
-}
+// 배열 여부를 확인하는 함수 추가 ([,] 로 이루어진 요소인지 확인)
+
 // pipe 함수
 const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(arg), args);
 
-// 텍스트를 seperator 기준으로 split하는 함수
-const splitText = str => str.split(data.seperator);
+// 텍스트를 split하는 함수
+const splitText = (str) => {
+  return str.split("")
+};
 
 // Array가 함수인지 확인하는 함수
 const checkIsArray = splitList => {
-  if (splitList[0] === '[' && splitList[splitList.length - 1] === ']') {
-    data.parsedData.type = 'array';
-    const filteredList = splitList.filter(item => {
-      return item !== splitList[0] && item !== splitList[splitList.length - 1] && item !== " ";
-    })
-    return filteredList;
-  } else errorMsg();
+  if (checker.isArray(splitList) === 'array') {
+    return pipe(
+      removeBracket,
+      trimList
+    )(splitList)
+  } else console.error('배열형태의 문자열을 입력해주세요.');
 };
 
-// 하위 데이터를 추출하는 함수
-const extractChild = filteredList => {
-  return filteredList.join("").split(",");
+// 대괄호를 제외한 리스트를 리턴하는 함수
+const removeBracket = arrayList => {
+  return arrayList.slice(1,-1)
+};
+
+// 배열 중 공백을 제외한 token을 리턴하는 함수
+const trimList = list => {
+  return list.filter(item => item !== " ")
+};
+
+// 변수 타입 확인하는 함수
+const checker = {
+  isArray(item) {
+    if (item[0] === '[' && item[item.length - 1] === ']') return 'array';
+  },
+  isNumber(item) {
+    if (item.match(/^\d+$/)) return 'number';
+  },
+  isComma(item) {
+    if (item === ',') return 'comma';
+  }
 }
 
-// 결과를 출력하는 함수
-const printData = analyzedList => {
-  const result = analyzedList.map(item => {
-    return {
-      type: checkType(item),
-      value: item
+const tokenizeList = (splitList) => {
+  let tmp = '';
+  const newList = [];
+  let calcArrBrackets = 0;
+  splitList.forEach(token => {
+    if (checker.isComma(token) && calcArrBrackets === 0) {
+      tmp && newList.push(tmp);
+      tmp = ''
+    } else if (token === ']' && calcArrBrackets === 0) {
+      tmp += token;
+      newList.push(tmp);
+      tmp = ''
+    } else {
+      token === '[' && ++calcArrBrackets;
+      token === ']' && --calcArrBrackets;
+      tmp += token;
     }
   })
-  data.parsedData = result;
-  return JSON.stringify(data.parsedData, null, 2);
+  tmp && newList.push(tmp);
+  return newList;
 }
 
-// 타입 체크하는 함수
-const checkType = token => {
-  const isNumber = /^\d+$/;
-  if (token.match(isNumber)) return 'number';
-  else errorMsg();
+const parseData = (splitList) => {
+  return splitList.reduce(parseReducer, makeChild('array', 'ArrayObject'))
 }
 
-// 에러 메세지 출력하는 함수 
-const errorMsg = () => {
-  return console.error('숫자데이터로 이루어진 배열형태의 문자열을 입력하세요.');
+const parseReducer = (prev, curr) => {
+  if (checker.isArray(curr)) {
+    prev.child.push(ArrayParser(curr))
+  } else {
+    prev.child.push(makeChild('number', curr));
+  }
+  return prev
+}
+
+const makeChild = (type, value) => {
+  return {
+    type: type,
+    value: value,
+    child: [],
+  }
 }
 
 const ArrayParser = pipe(
   splitText,
   checkIsArray,
-  extractChild,
-  printData,
+  tokenizeList,
+  parseData,
 )
 
-const str = "[123, 22, 32]";
+const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
 const result = ArrayParser(str);
-console.log('result:', result);
-// console.log(JSON.stringify(result, null, 2));
+console.log('result:', JSON.stringify(result, null, 2));
 
 // { type: 'array',
 //   child:
