@@ -47,6 +47,9 @@ const checker = {
   isArray(item) {
     if (item[0] === '[' && item[item.length - 1] === ']') return 'array';
   },
+  isObject(item) {
+    if (item[0] === '{' && item[item.length - 1] === '}') return 'object';
+  },
   isNumber(item) {
     if (item.match(/^\d+$/)) return 'number';
   },
@@ -81,21 +84,25 @@ const tokenizeList = (splitList) => {
   let tmp = '';
   const newList = [];
   let calcArrBrackets = 0;
+  let calcObjBrackets = 0;
   splitList.forEach(token => {
-    if (checkIsComma(token) && calcArrBrackets === 0) {
+    if (checkIsComma(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
       tmp && newList.push(tmp);
       tmp = ''
-    } else if (token === ']' && calcArrBrackets === 0) {
+    } else if ((token === ']' && calcArrBrackets === 0) || token === '}' && calcObjBrackets === 0) {
       tmp += token;
       newList.push(tmp);
       tmp = ''
     } else {
       token === '[' && ++calcArrBrackets;
       token === ']' && --calcArrBrackets;
+      token === '{' && ++calcObjBrackets;
+      token === '}' && --calcObjBrackets;
       tmp += token;
     }
   })
   tmp && newList.push(tmp);
+  console.log('newList:', newList);
   return newList;
 }
 
@@ -131,7 +138,7 @@ const arrayParser = pipe(
 )
 
 // const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
-const str = "['1'a3',[null,false,['11',[112233],112],55, '99'],33, true]"
+const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
 const result = arrayParser(str);
 console.log('result:', JSON.stringify(result, null, 2));
 
