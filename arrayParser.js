@@ -38,6 +38,10 @@ const trimList = list => {
   return list.filter(item => item !== " ")
 };
 
+const checkIsComma = item => {
+  if (item === ',') return 'comma';
+};
+
 // 변수 타입 확인하는 함수
 const checker = {
   isArray(item) {
@@ -46,8 +50,29 @@ const checker = {
   isNumber(item) {
     if (item.match(/^\d+$/)) return 'number';
   },
-  isComma(item) {
-    if (item === ',') return 'comma';
+  isNull(item) {
+    if (item.match(/^null$/)) return 'null';
+  },
+  isBoolean(item) {
+    if (item.match(/^(true|false)$/)) return 'boolean';
+  },
+  isString(item) {
+    // if (item.match(/^(['"]).*?\1$/)) {
+    //   if () {
+    //     return 'string'
+    //   } else {
+    //     console.error(`${item}은 올바른 문자열이 아닙니다.`);
+    //   }
+    // };
+  },
+  isUnknownType(item) {
+    console.error(`${item}은 알 수 없는 타입입니다.`);
+  }
+}
+
+const typeChecker = item => {
+  for (type in checker) {
+    if (checker[type](item)) return checker[type](item);
   }
 }
 
@@ -56,7 +81,7 @@ const tokenizeList = (splitList) => {
   const newList = [];
   let calcArrBrackets = 0;
   splitList.forEach(token => {
-    if (checker.isComma(token) && calcArrBrackets === 0) {
+    if (checkIsComma(token) && calcArrBrackets === 0) {
       tmp && newList.push(tmp);
       tmp = ''
     } else if (token === ']' && calcArrBrackets === 0) {
@@ -70,23 +95,27 @@ const tokenizeList = (splitList) => {
     }
   })
   tmp && newList.push(tmp);
+  console.log('newList:', newList);
   return newList;
 }
 
 const parseData = (splitList) => {
-  return splitList.reduce(parseReducer, makeChild('array', 'ArrayObject'))
+  return splitList.reduce(parseReducer, makeChild('ArrayObject', 'array'))
 }
 
 const parseReducer = (prev, curr) => {
   if (checker.isArray(curr)) {
-    prev.child.push(ArrayParser(curr))
+    prev.child.push(arrayParser(curr))
   } else {
-    prev.child.push(makeChild('number', curr));
+    prev.child.push(pipe(
+      typeChecker,
+      makeChild.bind(null, curr)
+    )(curr));
   }
   return prev
 }
 
-const makeChild = (type, value) => {
+const makeChild = (value, type) => {
   return {
     type: type,
     value: value,
@@ -94,15 +123,16 @@ const makeChild = (type, value) => {
   }
 }
 
-const ArrayParser = pipe(
+const arrayParser = pipe(
   splitText,
   checkIsArray,
   tokenizeList,
   parseData,
 )
 
-const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
-const result = ArrayParser(str);
+// const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
+const str = "['1a3',[null,false,['11',[112233],112],55, '99'],33, true]"
+const result = arrayParser(str);
 console.log('result:', JSON.stringify(result, null, 2));
 
 // { type: 'array',
