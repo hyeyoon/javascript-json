@@ -59,16 +59,14 @@ const checker = {
   isString(item) {
     if (item.match(/^(['"]).*?\1$/)) {
       if (item.slice(1, -1).match(/['"]/)) {
-        console.error(`${item}은 올바른 문자열이 아닙니다.`);
-        return 'unknownType'
+        throw Error(`${item}은 올바른 문자열이 아닙니다.`);
       } else {
         return 'string'
       }
     };
   },
   isUnknownType(item) {
-    console.error(`${item}은 알 수 없는 타입입니다.`);
-    return 'unknownType'
+    throw Error(`${item}은 알 수 없는 타입입니다.`);
   }
 }
 
