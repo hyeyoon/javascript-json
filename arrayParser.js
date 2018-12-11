@@ -57,22 +57,25 @@ const checker = {
     if (item.match(/^(true|false)$/)) return 'boolean';
   },
   isString(item) {
-    // if (item.match(/^(['"]).*?\1$/)) {
-    //   if () {
-    //     return 'string'
-    //   } else {
-    //     console.error(`${item}은 올바른 문자열이 아닙니다.`);
-    //   }
-    // };
+    if (item.match(/^(['"]).*?\1$/)) {
+      if (item.slice(1, -1).match(/['"]/)) {
+        console.error(`${item}은 올바른 문자열이 아닙니다.`);
+        return 'unknownType'
+      } else {
+        return 'string'
+      }
+    };
   },
   isUnknownType(item) {
     console.error(`${item}은 알 수 없는 타입입니다.`);
+    return 'unknownType'
   }
 }
 
 const typeChecker = item => {
   for (type in checker) {
-    if (checker[type](item)) return checker[type](item);
+    let typeResult = checker[type](item);
+    if (typeResult) return typeResult;
   }
 }
 
@@ -95,7 +98,6 @@ const tokenizeList = (splitList) => {
     }
   })
   tmp && newList.push(tmp);
-  console.log('newList:', newList);
   return newList;
 }
 
@@ -131,7 +133,7 @@ const arrayParser = pipe(
 )
 
 // const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
-const str = "['1a3',[null,false,['11',[112233],112],55, '99'],33, true]"
+const str = "['1'a3',[null,false,['11',[112233],112],55, '99'],33, true]"
 const result = arrayParser(str);
 console.log('result:', JSON.stringify(result, null, 2));
 
