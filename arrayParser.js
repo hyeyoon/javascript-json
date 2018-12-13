@@ -25,6 +25,12 @@ const checkIsArray = splitList => {
   } else console.error('배열형태의 문자열을 입력해주세요.');
 };
 
+const checkIsObject = splitList => {
+  if (checker.isObject(splitList) === 'object') {
+    return removeBracket(splitList);
+  } else console.error('올바른 객체 형태가 아닙니다.');
+}
+
 // 대괄호를 제외한 리스트를 리턴하는 함수
 const removeBracket = arrayList => {
   return arrayList.slice(1,-1)
@@ -39,8 +45,8 @@ const checkIsComma = item => {
   if (item === ',') return true;
 };
 
-const checkIsWhiteSpace = item => {
-  if (item.match(/\s/)) return true;
+const checkIsColon = item => {
+  if (item === ':') return true;
 }
 
 // 변수 타입 확인하는 함수
@@ -88,14 +94,12 @@ const tokenizeList = (splitList) => {
   let calcObjBrackets = 0;
   splitList.forEach(token => {
     if (checkIsComma(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
-      tmp && newList.push(tmp);
+      tmp && newList.push(tmp.trim());
       tmp = ''
     } else if ((token === ']' && calcArrBrackets === 0) || token === '}' && calcObjBrackets === 0) {
       tmp += token;
-      newList.push(tmp);
+      newList.push(tmp.trim());
       tmp = ''
-    } else if (checkIsWhiteSpace(token)) {
-      tmp && (tmp += token);
     } else {
       token === '[' && ++calcArrBrackets;
       token === ']' && --calcArrBrackets;
@@ -104,9 +108,47 @@ const tokenizeList = (splitList) => {
       tmp += token;
     }
   })
-  tmp && newList.push(tmp);
+  tmp && newList.push(tmp.trim());
   console.log('newList:', newList);
   return newList;
+}
+
+const tokenizeObject = (splitList) => {
+  let tmpKey = '', tmpValue = '', tmp = '' ;
+  const newObj = {};
+  let calcArrBrackets = 0;
+  let calcObjBrackets = 0;
+  console.log('splitList:', splitList);
+  splitList.forEach(token => {
+    if (checkIsComma(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
+      if (tmp) {
+        tmpValue = tmp
+        newObj[tmpKey.trim()] = tmpValue.trim();
+      }
+      tmp = '';
+      tmpKey = '';
+      tmpValue = '';
+    } else if (checkIsColon(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
+      tmpKey = tmp;
+      tmp = '';
+    } else {
+      token === '[' && ++calcArrBrackets;
+      token === ']' && --calcArrBrackets;
+      token === '{' && ++calcObjBrackets;
+      token === '}' && --calcObjBrackets;
+      tmp += token;
+    }
+    console.log('token:', token);
+    console.log('tmp:', tmp);
+    console.log('tmpKey:', tmpKey);
+    console.log('tmpValue:', tmpValue);
+  })
+  if (tmp) {
+    tmpValue = tmp;
+    newObj[tmpKey.trim()] = tmpValue.trim();
+  }
+  console.log('newObj:', newObj);
+  return newObj;
 }
 
 const parseData = (splitList) => {
@@ -117,8 +159,9 @@ const parseReducer = (prev, curr) => {
   if (checker.isArray(curr)) {
     prev.child.push(arrayParser(curr))
   } else if (checker.isObject(curr)) {
-    console.log('typeof(curr):', typeof(curr));
-    console.log('curr:', curr);
+    prev.child.push(objectParser(curr))
+    // console.log('typeof(curr):', typeof(curr));
+    // console.log('curr:', curr);
   } else {
     prev.child.push(pipe(
       typeChecker,
@@ -143,8 +186,15 @@ const arrayParser = pipe(
   parseData,
 )
 
-const str = "[123,[22],'asd asd', [1,[2, [3]], 4, 5]]";
-// const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
+const objectParser = pipe(
+  splitText,
+  checkIsObject,
+  tokenizeObject,
+  parseData
+)
+
+// const str = "[123,[22],'asd asd', [1,[2, [3]], 4, 5]]";
+const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
 const result = arrayParser(str);
 console.log('result:', JSON.stringify(result, null, 2));
 
