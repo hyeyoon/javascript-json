@@ -21,10 +21,7 @@ const splitText = (str) => {
 // Array가 함수인지 확인하는 함수
 const checkIsArray = splitList => {
   if (checker.isArray(splitList) === 'array') {
-    return pipe(
-      removeBracket,
-      trimList
-    )(splitList)
+    return removeBracket(splitList);
   } else console.error('배열형태의 문자열을 입력해주세요.');
 };
 
@@ -39,8 +36,12 @@ const trimList = list => {
 };
 
 const checkIsComma = item => {
-  if (item === ',') return 'comma';
+  if (item === ',') return true;
 };
+
+const checkIsWhiteSpace = item => {
+  if (item.match(/\s/)) return true;
+}
 
 // 변수 타입 확인하는 함수
 const checker = {
@@ -93,6 +94,8 @@ const tokenizeList = (splitList) => {
       tmp += token;
       newList.push(tmp);
       tmp = ''
+    } else if (checkIsWhiteSpace(token)) {
+      tmp && (tmp += token);
     } else {
       token === '[' && ++calcArrBrackets;
       token === ']' && --calcArrBrackets;
@@ -113,6 +116,9 @@ const parseData = (splitList) => {
 const parseReducer = (prev, curr) => {
   if (checker.isArray(curr)) {
     prev.child.push(arrayParser(curr))
+  } else if (checker.isObject(curr)) {
+    console.log('typeof(curr):', typeof(curr));
+    console.log('curr:', curr);
   } else {
     prev.child.push(pipe(
       typeChecker,
@@ -137,8 +143,8 @@ const arrayParser = pipe(
   parseData,
 )
 
-// const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
-const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
+const str = "[123,[22],'asd asd', [1,[2, [3]], 4, 5]]";
+// const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
 const result = arrayParser(str);
 console.log('result:', JSON.stringify(result, null, 2));
 
