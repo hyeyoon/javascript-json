@@ -83,19 +83,14 @@ const typeChecker = item => {
 const tokenizeList = (splitList) => {
   const type = typeChecker(splitList);
   const removedBracketList = removeBracket(splitList);
-  console.log('type:', type);
-  console.log('removedBracketList:', removedBracketList);
-  let tmp = '';
-  let tmpKey = '';
   const newItem = (type === 'array') ? [] : {};
-  let calcArrBrackets = 0;
-  let calcObjBrackets = 0;
+  let [tmp, tmpKey, calcArrBrackets, calcObjBrackets] = ['', '', 0, 0];
   removedBracketList.forEach(token => {
     if (checkIsComma(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
       if (type === 'array') {
         tmp && newItem.push(tmp.trim());
       } else {
-        newItem[tmpKey] = tmp;
+        newItem[tmpKey] = tmp.trim();
         tmpKey = '';
       }
       tmp = ''
@@ -119,29 +114,31 @@ const tokenizeList = (splitList) => {
       tmp += token;
     }
   })
-  console.log('tmp:', tmp);
   if (type === 'array') {
     tmp && newItem.push(tmp.trim());
   } else {
     newItem[tmpKey] = tmp.trim();
   }
-  console.log('newItem:', newItem);
   return newItem;
 }
 
-const parseData = (splitList) => {
-  return splitList.reduce(parseReducer, makeChild('ArrayObject', 'array'))
+const parseData = (splitList, initialValue = makeChild('ArrayObject', 'array')) => {
+  return splitList.reduce(parseReducer, initialValue)
 }
 
 const parseReducer = (prev, curr) => {
-  if (checker.isArray(curr) || checker.isObject(curr)) {
+  if (checker.isArray(curr)) {
     prev.child.push(arrayParser(curr))
   }
-  // else if (checker.isObject(curr)) {
-  //   prev.child.push(makeChild('ObjectObject', 'object'));
-  //   const currentItem = prev.child[prev.child.length - 1];
-  //   objectParser(curr, currentItem);
-  // }
+  else if (checker.isObject(curr)) {
+    prev.child.push(makeChild('ObjectObject', 'object'));
+    const currentItem = prev.child[prev.child.length - 1];
+    pipe(
+      splitText,
+      tokenizeList,
+      parseObject.bind(null, currentItem)
+    )(curr)
+  }
   else {
     prev.child.push(pipe(
       typeChecker,
@@ -151,34 +148,39 @@ const parseReducer = (prev, curr) => {
   return prev
 }
 
-const makeChild = (value, type) => {
-  return {
-    type: type,
-    value: value,
-    child: [],
+const makeChild = (value, type, key) => {
+  if (key) {
+    return {type: type, objectKey: key, objectValue: value, value: []};
+  }
+  else {
+    return {type: type, value: value, child: []};
   }
 }
 
 const arrayParser = pipe(
   splitText,
-  // checkIsArray,
   tokenizeList,
   parseData,
 )
 
-const objectParser = (curr, currentParseData) => {
-  console.log('curr:', curr);
+const parseObject = (currentParseData, curr) => {
+  let index = 0
+  for (let key in curr) {
+    currentParseData.child.push(makeChild(curr[key], typeChecker(curr[key]), key));
+    if (typeChecker(curr[key]) === 'array') {
+      currentParseData.child[index].value = (arrayParser(curr[key]))
+    } else if (typeChecker(curr[key]) === 'object') {
+      pipe(
+        splitText,
+        tokenizeList,
+        parseObject.bind(null, currentParseData.child[index])
+      )(curr)
+    }
+    index++;
+  }
 }
 
 // const str = "[123,[22],'asd asd', [1,[2, [3]], 4, 5]]";
 const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
 const result = arrayParser(str);
 console.log('result:', JSON.stringify(result, null, 2));
-
-// { type: 'array',
-//   child:
-//     [ { type: 'number', value: '123', child: [] },
-//      { type: 'number', value: '22', child: [] },
-//      { type: 'number', value: '33', child: [] }
-//     ]
-// }
