@@ -8,8 +8,6 @@
  *  - 정규표현식 사용은 최소한으로 한다.(token의 타입체크에 한해 사용가능)
  */
 
-// 배열 여부를 확인하는 함수 추가 ([,] 로 이루어진 요소인지 확인)
-
 // pipe 함수
 const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(arg), args);
 
@@ -21,19 +19,14 @@ const splitText = (str) => {
 // Array가 함수인지 확인하는 함수
 const checkIsArray = splitList => {
   if (checker.isArray(splitList) === 'array') {
-    return removeBracket(splitList);
+    // return removeBracket(splitList);
+    return splitList;
   } else console.error('배열형태의 문자열을 입력해주세요.');
 };
 
-const checkIsObject = splitList => {
-  if (checker.isObject(splitList) === 'object') {
-    return removeBracket(splitList);
-  } else console.error('올바른 객체 형태가 아닙니다.');
-}
-
-// 대괄호를 제외한 리스트를 리턴하는 함수
-const removeBracket = arrayList => {
-  return arrayList.slice(1,-1)
+// 처음과 끝을 제외한 결과를 리턴하는 함수
+const removeBracket = item => {
+  return item.slice(1,-1)
 };
 
 // 배열 중 공백을 제외한 token을 리턴하는 함수
@@ -88,48 +81,35 @@ const typeChecker = item => {
 }
 
 const tokenizeList = (splitList) => {
+  const type = typeChecker(splitList);
+  const removedBracketList = removeBracket(splitList);
+  console.log('type:', type);
+  console.log('removedBracketList:', removedBracketList);
   let tmp = '';
-  const newList = [];
+  let tmpKey = '';
+  const newItem = (type === 'array') ? [] : {};
   let calcArrBrackets = 0;
   let calcObjBrackets = 0;
-  splitList.forEach(token => {
+  removedBracketList.forEach(token => {
     if (checkIsComma(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
-      tmp && newList.push(tmp.trim());
+      if (type === 'array') {
+        tmp && newItem.push(tmp.trim());
+      } else {
+        newItem[tmpKey] = tmp;
+        tmpKey = '';
+      }
       tmp = ''
     } else if ((token === ']' && calcArrBrackets === 0) || token === '}' && calcObjBrackets === 0) {
       tmp += token;
-      newList.push(tmp.trim());
-      tmp = ''
-    } else {
-      token === '[' && ++calcArrBrackets;
-      token === ']' && --calcArrBrackets;
-      token === '{' && ++calcObjBrackets;
-      token === '}' && --calcObjBrackets;
-      tmp += token;
-    }
-  })
-  tmp && newList.push(tmp.trim());
-  console.log('newList:', newList);
-  return newList;
-}
-
-const tokenizeObject = (splitList) => {
-  let tmpKey = '', tmpValue = '', tmp = '' ;
-  const newObj = {};
-  let calcArrBrackets = 0;
-  let calcObjBrackets = 0;
-  console.log('splitList:', splitList);
-  splitList.forEach(token => {
-    if (checkIsComma(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
-      if (tmp) {
-        tmpValue = tmp
-        newObj[tmpKey.trim()] = tmpValue.trim();
+      if (type === 'array') {
+        newItem.push(tmp.trim());
+      } else {
+        newItem[tmpKey] = tmp.trim();
+        tmpKey = '';
       }
-      tmp = '';
-      tmpKey = '';
-      tmpValue = '';
-    } else if (checkIsColon(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
-      tmpKey = tmp;
+      tmp = ''
+    } else if (token === ':' && type === 'object' && calcObjBrackets === 0) {
+      tmpKey = tmp.trim();
       tmp = '';
     } else {
       token === '[' && ++calcArrBrackets;
@@ -138,17 +118,15 @@ const tokenizeObject = (splitList) => {
       token === '}' && --calcObjBrackets;
       tmp += token;
     }
-    console.log('token:', token);
-    console.log('tmp:', tmp);
-    console.log('tmpKey:', tmpKey);
-    console.log('tmpValue:', tmpValue);
   })
-  if (tmp) {
-    tmpValue = tmp;
-    newObj[tmpKey.trim()] = tmpValue.trim();
+  console.log('tmp:', tmp);
+  if (type === 'array') {
+    tmp && newItem.push(tmp.trim());
+  } else {
+    newItem[tmpKey] = tmp.trim();
   }
-  console.log('newObj:', newObj);
-  return newObj;
+  console.log('newItem:', newItem);
+  return newItem;
 }
 
 const parseData = (splitList) => {
@@ -156,13 +134,15 @@ const parseData = (splitList) => {
 }
 
 const parseReducer = (prev, curr) => {
-  if (checker.isArray(curr)) {
+  if (checker.isArray(curr) || checker.isObject(curr)) {
     prev.child.push(arrayParser(curr))
-  } else if (checker.isObject(curr)) {
-    prev.child.push(objectParser(curr))
-    // console.log('typeof(curr):', typeof(curr));
-    // console.log('curr:', curr);
-  } else {
+  }
+  // else if (checker.isObject(curr)) {
+  //   prev.child.push(makeChild('ObjectObject', 'object'));
+  //   const currentItem = prev.child[prev.child.length - 1];
+  //   objectParser(curr, currentItem);
+  // }
+  else {
     prev.child.push(pipe(
       typeChecker,
       makeChild.bind(null, curr)
@@ -181,17 +161,14 @@ const makeChild = (value, type) => {
 
 const arrayParser = pipe(
   splitText,
-  checkIsArray,
+  // checkIsArray,
   tokenizeList,
   parseData,
 )
 
-const objectParser = pipe(
-  splitText,
-  checkIsObject,
-  tokenizeObject,
-  parseData
-)
+const objectParser = (curr, currentParseData) => {
+  console.log('curr:', curr);
+}
 
 // const str = "[123,[22],'asd asd', [1,[2, [3]], 4, 5]]";
 const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
