@@ -87,46 +87,46 @@ const tokenizeChecker = {
   },
 }
 
-const tokenizeList = (splitList) => {
-  const type = typeChecker(splitList);
-  const removedBracketList = removeBracket(splitList);
-  const newItem = (type === 'array') ? [] : {};
-  let [tmp, tmpKey, calcArrBrackets, calcObjBrackets] = ['', '', 0, 0];
-  removedBracketList.forEach(token => {
-    if (tokenizeChecker.isEnd(token, calcArrBrackets, calcObjBrackets)) {
-      if (type === 'array') {
-        tmp && newItem.push(tmp.trim());
-      } else {
-        newItem[tmpKey] = tmp.trim();
-        tmpKey = '';
-      }
-      tmp = ''
-    } else if (tokenizeChecker.isClosed(token, calcArrBrackets, calcObjBrackets)) {
-      tmp += token;
-      if (type === 'array') {
-        newItem.push(tmp.trim());
-      } else {
-        newItem[tmpKey] = tmp.trim();
-        tmpKey = '';
-      }
-      tmp = ''
-    } else if (tokenizeChecker.isObjKey(token, type, calcObjBrackets)) {
-      tmpKey = tmp.trim();
-      tmp = '';
-    } else {
-      token === '[' && ++calcArrBrackets;
-      token === ']' && --calcArrBrackets;
-      token === '{' && ++calcObjBrackets;
-      token === '}' && --calcObjBrackets;
-      tmp += token;
-    }
-  })
+const addDataToItem = (type, {newItem, tmp, tmpKey}) => {
   if (type === 'array') {
     tmp && newItem.push(tmp.trim());
   } else {
     newItem[tmpKey] = tmp.trim();
   }
-  return newItem;
+}
+
+const tokenizeList = (splitList) => {
+  const removedBracketList = removeBracket(splitList);
+  const type = typeChecker(splitList);
+  const tokenizeData = {
+    newItem: (type === 'array') ? [] : {},
+    tmp: '',
+    tmpKey: '',
+  };
+  let [calcArrBrackets, calcObjBrackets] = [0, 0];
+  removedBracketList.forEach(token => {
+    if (tokenizeChecker.isEnd(token, calcArrBrackets, calcObjBrackets)) {
+      addDataToItem(type, tokenizeData);
+      tokenizeData.tmp = ''
+      tokenizeData.tmpKey = '';
+    } else if (tokenizeChecker.isClosed(token, calcArrBrackets, calcObjBrackets)) {
+      tokenizeData.tmp += token;
+      addDataToItem(type, tokenizeData);
+      tokenizeData.tmp = ''
+      tokenizeData.tmpKey = '';
+    } else if (tokenizeChecker.isObjKey(token, type, calcObjBrackets)) {
+      tokenizeData.tmpKey = tokenizeData.tmp.trim();
+      tokenizeData.tmp = '';
+    } else {
+      token === '[' && ++calcArrBrackets;
+      token === ']' && --calcArrBrackets;
+      token === '{' && ++calcObjBrackets;
+      token === '}' && --calcObjBrackets;
+      tokenizeData.tmp += token;
+    }
+  })
+  addDataToItem(type, tokenizeData);
+  return tokenizeData.newItem;
 }
 
 const parseData = (splitList, initialValue = makeChild('ArrayObject', 'array')) => {
