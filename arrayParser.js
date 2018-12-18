@@ -75,13 +75,25 @@ const typeChecker = item => {
   }
 }
 
+const tokenizeChecker = {
+  isEnd (token, arrStatus, objStatus) {
+    if (checkIsComma(token) && arrStatus === 0 && objStatus === 0) return true;
+  },
+  isClosed (token, arrStatus, objStatus) {
+    if ((token === ']' && arrStatus === 0) || (token === '}' && objStatus === 0)) return true;
+  },
+  isObjKey (token, type, objStatus) {
+    if (token === ':' && type === 'object' && objStatus === 0) return true;
+  },
+}
+
 const tokenizeList = (splitList) => {
   const type = typeChecker(splitList);
   const removedBracketList = removeBracket(splitList);
   const newItem = (type === 'array') ? [] : {};
   let [tmp, tmpKey, calcArrBrackets, calcObjBrackets] = ['', '', 0, 0];
   removedBracketList.forEach(token => {
-    if (checkIsComma(token) && calcArrBrackets === 0 && calcObjBrackets === 0) {
+    if (tokenizeChecker.isEnd(token, calcArrBrackets, calcObjBrackets)) {
       if (type === 'array') {
         tmp && newItem.push(tmp.trim());
       } else {
@@ -89,7 +101,7 @@ const tokenizeList = (splitList) => {
         tmpKey = '';
       }
       tmp = ''
-    } else if ((token === ']' && calcArrBrackets === 0) || token === '}' && calcObjBrackets === 0) {
+    } else if (tokenizeChecker.isClosed(token, calcArrBrackets, calcObjBrackets)) {
       tmp += token;
       if (type === 'array') {
         newItem.push(tmp.trim());
@@ -98,7 +110,7 @@ const tokenizeList = (splitList) => {
         tmpKey = '';
       }
       tmp = ''
-    } else if (token === ':' && type === 'object' && calcObjBrackets === 0) {
+    } else if (tokenizeChecker.isObjKey(token, type, calcObjBrackets)) {
       tmpKey = tmp.trim();
       tmp = '';
     } else {
