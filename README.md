@@ -36,7 +36,7 @@
      { type: 'array', value: ArrayObject, child: [{type:'number', value:22, child:[]}] }`
 ```
 
-## STEP3. 무한 중첩된 배열구조
+## STEP3. 무한 중첩된 배열구조 / STEP4. 여러가지 Type 대응
 
 ## 요구사항
 
@@ -71,3 +71,66 @@
 4. 분석을 마친 토큰 데이터들을 원하는 데이터 형태로 파싱
     1. 파싱 중 배열 데이터를 만난 경우 3번의 작업으로 돌아가서 반복
     2. 숫자 데이터의 경우 파싱을 끝내고 객체 추가
+
+## STEP5. 객체 Type
+
+## 요구사항
+
+* Object 타입 ( { key: value} ) 도 지원한다.
+* 배열안에 object, object안에 배열이 자유롭게 포함될 수 있다.
+* 지금까지의 코드를 리팩토링한다.
+  * 복잡한 세부로직은 반드시 함수로 분리해본다.
+  * 최대한 작은 단위의 함수로 만든다.
+  * 중복된 코드역시 함수로 분리해서 일반화한다.
+  * 객체형태의 class로 만든다.
+
+# 설계
+
+1. STEP3, STEP4에서 만든 tokenizeList 함수를 객체 타입도 분석할 수 있돌록 수정
+2. 객체 타입의 경우 아래와 같은 형식으로 표현되도록 구현
+```
+input = [{easy : ['hello', {a:'a'}, 'world']}];
+result = {
+  "type": "object",
+  "value": "ObjectObject",
+  "child": [
+    {
+      "type": "array",
+      "objectKey": "easy",
+      "objectValue": "['hello', {a:'a'}, 'world']",
+      "value": {
+        "type": "array",
+        "value": "ArrayObject",
+        "child": [
+          {
+            "type": "string",
+            "value": "'hello'",
+            "child": []
+          },
+          {
+            "type": "object",
+            "value": "ObjectObject",
+            "child": [
+              {
+                "type": "string",
+                "objectKey": "a",
+                "objectValue": "'a'",
+                "value": []
+              }
+            ]
+          },
+          {
+            "type": "string",
+            "value": "'world'",
+            "child": []
+          }
+        ]
+      }
+    }
+```
+  1. arrayParser에서 분석 결과가 array일 때는 arrayParser를 재귀 호출
+  2. 분석 결과가 object일 때는 parseObject 함수 호출을 통해 객체 분석
+    1. parseObject의 분석 결과가 array일 경우 다시 arrayParser를 통해 분석
+    2. 분석 결과가 object일 때는 parseObject로 분석
+    3. 그 외의 결과는 타입 분석 
+  3. 그 외의 결과는 타입 분석

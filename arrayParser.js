@@ -1,14 +1,7 @@
 /********************
  * ArrayParser
  ********************
- *  [requirements]
- *  - ArrayParser함수를 만든다.
- *  - 배열안에는 숫자데이터만 존재한다.
- *  - 배열형태의 문자열을 token단위로 해석한 후, 이를 분석한 자료구조를 만든다.
- *  - 정규표현식 사용은 최소한으로 한다.(token의 타입체크에 한해 사용가능)
  */
-
-// 배열 여부를 확인하는 함수 추가 ([,] 로 이루어진 요소인지 확인)
 
 // pipe 함수
 const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(arg), args);
@@ -21,16 +14,14 @@ const splitText = (str) => {
 // Array가 함수인지 확인하는 함수
 const checkIsArray = splitList => {
   if (checker.isArray(splitList) === 'array') {
-    return pipe(
-      removeBracket,
-      trimList
-    )(splitList)
+    // return removeBracket(splitList);
+    return splitList;
   } else console.error('배열형태의 문자열을 입력해주세요.');
 };
 
-// 대괄호를 제외한 리스트를 리턴하는 함수
-const removeBracket = arrayList => {
-  return arrayList.slice(1,-1)
+// 처음과 끝을 제외한 결과를 리턴하는 함수
+const removeBracket = item => {
+  return item.slice(1,-1)
 };
 
 // 배열 중 공백을 제외한 token을 리턴하는 함수
@@ -39,13 +30,20 @@ const trimList = list => {
 };
 
 const checkIsComma = item => {
-  if (item === ',') return 'comma';
+  if (item === ',') return true;
 };
+
+const checkIsColon = item => {
+  if (item === ':') return true;
+}
 
 // 변수 타입 확인하는 함수
 const checker = {
   isArray(item) {
     if (item[0] === '[' && item[item.length - 1] === ']') return 'array';
+  },
+  isObject(item) {
+    if (item[0] === '{' && item[item.length - 1] === '}') return 'object';
   },
   isNumber(item) {
     if (item.match(/^\d+$/)) return 'number';
@@ -77,36 +75,78 @@ const typeChecker = item => {
   }
 }
 
+const tokenizeChecker = {
+  isEnd (token, arrStatus, objStatus) {
+    if (checkIsComma(token) && arrStatus === 0 && objStatus === 0) return true;
+  },
+  isClosed (token, arrStatus, objStatus) {
+    if ((token === ']' && arrStatus === 0) || (token === '}' && objStatus === 0)) return true;
+  },
+  isObjKey (token, type, objStatus) {
+    if (token === ':' && type === 'object' && objStatus === 0) return true;
+  },
+}
+
+const addDataToItem = (type, {newItem, tmp, tmpKey}) => {
+  if (type === 'array') {
+    tmp && newItem.push(tmp.trim());
+  } else {
+    newItem[tmpKey] = tmp.trim();
+  }
+}
+
 const tokenizeList = (splitList) => {
-  let tmp = '';
-  const newList = [];
-  let calcArrBrackets = 0;
-  splitList.forEach(token => {
-    if (checkIsComma(token) && calcArrBrackets === 0) {
-      tmp && newList.push(tmp);
-      tmp = ''
-    } else if (token === ']' && calcArrBrackets === 0) {
-      tmp += token;
-      newList.push(tmp);
-      tmp = ''
+  const removedBracketList = removeBracket(splitList);
+  const type = typeChecker(splitList);
+  const tokenizeData = {
+    newItem: (type === 'array') ? [] : {},
+    tmp: '',
+    tmpKey: '',
+  };
+  let [calcArrBrackets, calcObjBrackets] = [0, 0];
+  removedBracketList.forEach(token => {
+    if (tokenizeChecker.isEnd(token, calcArrBrackets, calcObjBrackets)) {
+      addDataToItem(type, tokenizeData);
+      tokenizeData.tmp = ''
+      tokenizeData.tmpKey = '';
+    } else if (tokenizeChecker.isClosed(token, calcArrBrackets, calcObjBrackets)) {
+      tokenizeData.tmp += token;
+      addDataToItem(type, tokenizeData);
+      tokenizeData.tmp = ''
+      tokenizeData.tmpKey = '';
+    } else if (tokenizeChecker.isObjKey(token, type, calcObjBrackets)) {
+      tokenizeData.tmpKey = tokenizeData.tmp.trim();
+      tokenizeData.tmp = '';
     } else {
       token === '[' && ++calcArrBrackets;
       token === ']' && --calcArrBrackets;
-      tmp += token;
+      token === '{' && ++calcObjBrackets;
+      token === '}' && --calcObjBrackets;
+      tokenizeData.tmp += token;
     }
   })
-  tmp && newList.push(tmp);
-  return newList;
+  addDataToItem(type, tokenizeData);
+  return tokenizeData.newItem;
 }
 
-const parseData = (splitList) => {
-  return splitList.reduce(parseReducer, makeChild('ArrayObject', 'array'))
+const parseData = (splitList, initialValue = makeChild('ArrayObject', 'array')) => {
+  return splitList.reduce(parseReducer, initialValue)
 }
 
 const parseReducer = (prev, curr) => {
   if (checker.isArray(curr)) {
     prev.child.push(arrayParser(curr))
-  } else {
+  }
+  else if (checker.isObject(curr)) {
+    prev.child.push(makeChild('ObjectObject', 'object'));
+    const currentItem = prev.child[prev.child.length - 1];
+    pipe(
+      splitText,
+      tokenizeList,
+      parseObject.bind(null, currentItem)
+    )(curr)
+  }
+  else {
     prev.child.push(pipe(
       typeChecker,
       makeChild.bind(null, curr)
@@ -115,30 +155,39 @@ const parseReducer = (prev, curr) => {
   return prev
 }
 
-const makeChild = (value, type) => {
-  return {
-    type: type,
-    value: value,
-    child: [],
+const makeChild = (value, type, key) => {
+  if (key) {
+    return {type: type, objectKey: key, objectValue: value, value: []};
+  }
+  else {
+    return {type: type, value: value, child: []};
   }
 }
 
 const arrayParser = pipe(
   splitText,
-  checkIsArray,
   tokenizeList,
   parseData,
 )
 
-// const str = "[123,[22],33, [1,[2, [3]], 4, 5]]";
-const str = "['1'a3',[null,false,['11',[112233],112],55, '99'],33, true]"
+const parseObject = (currentParseData, curr) => {
+  let index = 0
+  for (let key in curr) {
+    currentParseData.child.push(makeChild(curr[key], typeChecker(curr[key]), key));
+    if (typeChecker(curr[key]) === 'array') {
+      currentParseData.child[index].value = (arrayParser(curr[key]))
+    } else if (typeChecker(curr[key]) === 'object') {
+      pipe(
+        splitText,
+        tokenizeList,
+        parseObject.bind(null, currentParseData.child[index])
+      )(curr)
+    }
+    index++;
+  }
+}
+
+// const str = "[123,[22],'asd asd', [1,[2, [3]], 4, 5]]";
+const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
 const result = arrayParser(str);
 console.log('result:', JSON.stringify(result, null, 2));
-
-// { type: 'array',
-//   child:
-//     [ { type: 'number', value: '123', child: [] },
-//      { type: 'number', value: '22', child: [] },
-//      { type: 'number', value: '33', child: [] }
-//     ]
-// }
