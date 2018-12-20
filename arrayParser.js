@@ -87,12 +87,14 @@ const tokenizeChecker = {
   },
 }
 
-const addDataToItem = (type, {newItem, tmp, tmpKey}) => {
+const addDataToItem = (type, data) => {
   if (type === 'array') {
-    tmp && newItem.push(tmp.trim());
+    data.tmp && data.newItem.push(data.tmp.trim());
   } else {
-    newItem[tmpKey] = tmp.trim();
+    data.newItem[data.tmpKey] = data.tmp.trim();
   }
+  data.tmp = '';
+  data.tmpKey = '';
 }
 
 const tokenizeList = (splitList) => {
@@ -107,13 +109,9 @@ const tokenizeList = (splitList) => {
   removedBracketList.forEach(token => {
     if (tokenizeChecker.isEnd(token, calcArrBrackets, calcObjBrackets)) {
       addDataToItem(type, tokenizeData);
-      tokenizeData.tmp = ''
-      tokenizeData.tmpKey = '';
     } else if (tokenizeChecker.isClosed(token, calcArrBrackets, calcObjBrackets)) {
       tokenizeData.tmp += token;
       addDataToItem(type, tokenizeData);
-      tokenizeData.tmp = ''
-      tokenizeData.tmpKey = '';
     } else if (tokenizeChecker.isObjKey(token, type, calcObjBrackets)) {
       tokenizeData.tmpKey = tokenizeData.tmp.trim();
       tokenizeData.tmp = '';
