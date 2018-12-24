@@ -4,11 +4,16 @@ const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(
 // 텍스트를 split하는 함수
 const splitText = (str) => str.split("");
 
+const validateType = data => {
+  if (checker.isArray(data) || checker.isObject(data)) return data
+  else throw Error (`배열 혹은 객체 형태의 데이터를 입력해주세요.`)
+}
+
 // Array가 함수인지 확인하는 함수
-const checkIsArray = splitList => {
-  if (checker.isArray(splitList) === 'array') splitList;
-  else console.error('배열형태의 문자열을 입력해주세요.');
-};
+// const checkIsArray = splitList => {
+//   if (checker.isArray(splitList) === 'array') splitList;
+//   else console.error('배열형태의 문자열을 입력해주세요.');
+// };
 
 // 처음과 끝을 제외한 결과를 리턴하는 함수
 const removeBracket = item => item.slice(1,-1);
@@ -28,9 +33,15 @@ const checkIsColon = item => {
 const checker = {
   isArray(item) {
     if (item[0] === '[' && item[item.length - 1] === ']') return 'array';
+    else if (item[0] === '[' || item[item.length - 1] === ']') {
+      throw Error(`정상적으로 종료되지 않은 배열이 있습니다.`);
+    };
   },
   isObject(item) {
     if (item[0] === '{' && item[item.length - 1] === '}') return 'object';
+    else if (item[0] === '{' || item[item.length - 1] === '}') {
+      throw Error(`정상적으로 종료되지 않은 객체가 있습니다.`);
+    };
   },
   isNumber(item) {
     if (item.match(/^\d+$/)) return 'number';
@@ -62,4 +73,4 @@ const typeChecker = item => {
   }
 }
 
-export { pipe, splitText, checkIsArray, removeBracket, checkIsComma, checkIsColon, checker, typeChecker }
+export { pipe, splitText, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker }

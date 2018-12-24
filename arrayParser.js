@@ -3,7 +3,7 @@
  ********************
  */
 
-import { pipe, splitText, checkIsArray, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
+import { pipe, splitText, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
 
 const tokenizeChecker = {
   isEnd (token, arrStatus, objStatus) {
@@ -18,10 +18,16 @@ const tokenizeChecker = {
 }
 
 const addDataToItem = (type, data) => {
+  data.tmp = data.tmp.trim();
   if (type === 'array') {
-    data.tmp && data.newItem.push(data.tmp.trim());
-  } else {
-    data.newItem[data.tmpKey] = data.tmp.trim();
+    typeChecker(data.tmp);
+    data.tmp && data.newItem.push(data.tmp);
+  } else if (type === 'object') {
+    if (data.tmpKey) {
+      typeChecker(data.tmp);
+      data.newItem[data.tmpKey] = data.tmp
+    }
+    else throw Error(`':'이 누락된 객체표현이 있습니다.`);
   }
   data.tmp = '';
   data.tmpKey = '';
@@ -69,6 +75,7 @@ const parseReducer = (prev, curr) => {
     prev.child.push(makeChild('ObjectObject', 'object'));
     const currentItem = prev.child[prev.child.length - 1];
     pipe(
+      validateType,
       splitText,
       tokenizeList,
       parseObject.bind(null, currentItem)
@@ -93,6 +100,7 @@ const makeChild = (value, type, key) => {
 }
 
 const arrayParser = pipe(
+  validateType,
   splitText,
   tokenizeList,
   parseData,
