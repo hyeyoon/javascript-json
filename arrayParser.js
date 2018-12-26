@@ -3,77 +3,7 @@
  ********************
  */
 
-// pipe 함수
-const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(arg), args);
-
-// 텍스트를 split하는 함수
-const splitText = (str) => {
-  return str.split("")
-};
-
-// Array가 함수인지 확인하는 함수
-const checkIsArray = splitList => {
-  if (checker.isArray(splitList) === 'array') {
-    // return removeBracket(splitList);
-    return splitList;
-  } else console.error('배열형태의 문자열을 입력해주세요.');
-};
-
-// 처음과 끝을 제외한 결과를 리턴하는 함수
-const removeBracket = item => {
-  return item.slice(1,-1)
-};
-
-// 배열 중 공백을 제외한 token을 리턴하는 함수
-const trimList = list => {
-  return list.filter(item => item !== " ")
-};
-
-const checkIsComma = item => {
-  if (item === ',') return true;
-};
-
-const checkIsColon = item => {
-  if (item === ':') return true;
-}
-
-// 변수 타입 확인하는 함수
-const checker = {
-  isArray(item) {
-    if (item[0] === '[' && item[item.length - 1] === ']') return 'array';
-  },
-  isObject(item) {
-    if (item[0] === '{' && item[item.length - 1] === '}') return 'object';
-  },
-  isNumber(item) {
-    if (item.match(/^\d+$/)) return 'number';
-  },
-  isNull(item) {
-    if (item.match(/^null$/)) return 'null';
-  },
-  isBoolean(item) {
-    if (item.match(/^(true|false)$/)) return 'boolean';
-  },
-  isString(item) {
-    if (item.match(/^(['"]).*?\1$/)) {
-      if (item.slice(1, -1).match(/['"]/)) {
-        throw Error(`${item}은 올바른 문자열이 아닙니다.`);
-      } else {
-        return 'string'
-      }
-    };
-  },
-  isUnknownType(item) {
-    throw Error(`${item}은 알 수 없는 타입입니다.`);
-  }
-}
-
-const typeChecker = item => {
-  for (type in checker) {
-    let typeResult = checker[type](item);
-    if (typeResult) return typeResult;
-  }
-}
+import { pipe, splitText, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
 
 const tokenizeChecker = {
   isEnd (token, arrStatus, objStatus) {
@@ -87,12 +17,20 @@ const tokenizeChecker = {
   },
 }
 
-const addDataToItem = (type, {newItem, tmp, tmpKey}) => {
+const addDataToItem = (type, data) => {
+  data.tmp = data.tmp.trim();
   if (type === 'array') {
-    tmp && newItem.push(tmp.trim());
-  } else {
-    newItem[tmpKey] = tmp.trim();
+    typeChecker(data.tmp);
+    data.tmp && data.newItem.push(data.tmp);
+  } else if (type === 'object') {
+    if (data.tmpKey) {
+      typeChecker(data.tmp);
+      data.newItem[data.tmpKey] = data.tmp
+    }
+    else throw Error(`':'이 누락된 객체표현이 있습니다.`);
   }
+  data.tmp = '';
+  data.tmpKey = '';
 }
 
 const tokenizeList = (splitList) => {
@@ -107,13 +45,9 @@ const tokenizeList = (splitList) => {
   removedBracketList.forEach(token => {
     if (tokenizeChecker.isEnd(token, calcArrBrackets, calcObjBrackets)) {
       addDataToItem(type, tokenizeData);
-      tokenizeData.tmp = ''
-      tokenizeData.tmpKey = '';
     } else if (tokenizeChecker.isClosed(token, calcArrBrackets, calcObjBrackets)) {
       tokenizeData.tmp += token;
       addDataToItem(type, tokenizeData);
-      tokenizeData.tmp = ''
-      tokenizeData.tmpKey = '';
     } else if (tokenizeChecker.isObjKey(token, type, calcObjBrackets)) {
       tokenizeData.tmpKey = tokenizeData.tmp.trim();
       tokenizeData.tmp = '';
@@ -141,6 +75,7 @@ const parseReducer = (prev, curr) => {
     prev.child.push(makeChild('ObjectObject', 'object'));
     const currentItem = prev.child[prev.child.length - 1];
     pipe(
+      validateType,
       splitText,
       tokenizeList,
       parseObject.bind(null, currentItem)
@@ -165,6 +100,7 @@ const makeChild = (value, type, key) => {
 }
 
 const arrayParser = pipe(
+  validateType,
   splitText,
   tokenizeList,
   parseData,
