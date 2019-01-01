@@ -3,7 +3,7 @@
  ********************
  */
 
-import { pipe, splitText, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
+import { pipe, splitText, errorMsg, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
 
 const tokenizeChecker = {
   isEnd (token, arrStatus, objStatus) {
@@ -27,7 +27,7 @@ const addDataToItem = (type, data) => {
       typeChecker(data.tmp);
       data.newItem[data.tmpKey] = data.tmp
     }
-    else throw Error(`':'이 누락된 객체표현이 있습니다.`);
+    else throw Error(errorMsg.objectColonFail);
   }
   data.tmp = '';
   data.tmpKey = '';
@@ -75,9 +75,7 @@ const parseReducer = (prev, curr) => {
     prev.child.push(makeChild('ObjectObject', 'object'));
     const currentItem = prev.child[prev.child.length - 1];
     pipe(
-      validateType,
-      splitText,
-      tokenizeList,
+      tokenize,
       parseObject.bind(null, currentItem)
     )(curr)
   }
@@ -99,10 +97,14 @@ const makeChild = (value, type, key) => {
   }
 }
 
-const arrayParser = pipe(
+const tokenize = pipe(
   validateType,
   splitText,
-  tokenizeList,
+  tokenizeList
+)
+
+const arrayParser = pipe(
+  tokenize,
   parseData,
 )
 
@@ -114,8 +116,7 @@ const parseObject = (currentParseData, curr) => {
       currentParseData.child[index].value = (arrayParser(curr[key]))
     } else if (typeChecker(curr[key]) === 'object') {
       pipe(
-        splitText,
-        tokenizeList,
+        tokenize,
         parseObject.bind(null, currentParseData.child[index])
       )(curr)
     }
