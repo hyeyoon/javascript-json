@@ -35,13 +35,9 @@ const removeBracket = item => item.slice(1,-1);
 // 배열 중 공백을 제외한 token을 리턴하는 함수
 const trimList = list => list.filter(item => item !== " ");
 
-const checkIsComma = item => {
-  if (item === ',') return true;
-};
+const checkIsComma = item => item === ',';
 
-const checkIsColon = item => {
-  if (item === ':') return true;
-}
+const checkIsColon = item => item === ':';
 
 // 변수 타입 확인하는 함수
 const checker = {
