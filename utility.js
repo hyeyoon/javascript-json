@@ -4,9 +4,23 @@ const pipe = (...functions) => args => functions.reduce((arg, nextFn) => nextFn(
 // 텍스트를 split하는 함수
 const splitText = (str) => str.split("");
 
+// error 객체
+const errorMsg = {
+  objectFail: '정상적으로 종료되지 않은 객체가 있습니다.',
+  arrayFail: '정상적으로 종료되지 않은 배열이 있습니다.',
+  dataFail: '배열 혹은 객체 형태의 데이터를 입력해주세요.',
+  stringFail(item) {
+    return `${item}은 올바른 문자열이 아닙니다.`
+  },
+  typeFail(item) {
+    return `${item}은 알 수 없는 타입입니다.`
+  },
+  objectColonFail: `':'이 누락된 객체표현이 있습니다.`,
+}
+
 const validateType = data => {
   if (checker.isArray(data) || checker.isObject(data)) return data
-  else throw Error (`배열 혹은 객체 형태의 데이터를 입력해주세요.`)
+  else throw Error (errorMsg.dataFail);
 }
 
 // Array가 함수인지 확인하는 함수
@@ -34,13 +48,13 @@ const checker = {
   isArray(item) {
     if (item[0] === '[' && item[item.length - 1] === ']') return 'array';
     else if (item[0] === '[' || item[item.length - 1] === ']') {
-      throw Error(`정상적으로 종료되지 않은 배열이 있습니다.`);
+      throw Error(errorMsg.arrayFail);
     };
   },
   isObject(item) {
     if (item[0] === '{' && item[item.length - 1] === '}') return 'object';
     else if (item[0] === '{' || item[item.length - 1] === '}') {
-      throw Error(`정상적으로 종료되지 않은 객체가 있습니다.`);
+      throw Error(errorMsg.objectFail);
     };
   },
   isNumber(item) {
@@ -55,14 +69,14 @@ const checker = {
   isString(item) {
     if (item.match(/^(['"]).*?\1$/)) {
       if (item.slice(1, -1).match(/['"]/)) {
-        throw Error(`${item}은 올바른 문자열이 아닙니다.`);
+        throw Error(errorMsg.stringFail(item));
       } else {
         return 'string'
       }
     };
   },
   isUnknownType(item) {
-    throw Error(`${item}은 알 수 없는 타입입니다.`);
+    throw Error(errorMsg.typeFail(item));
   }
 }
 
@@ -73,4 +87,4 @@ const typeChecker = item => {
   }
 }
 
-export { pipe, splitText, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker }
+export { pipe, splitText, errorMsg, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker }

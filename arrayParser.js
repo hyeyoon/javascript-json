@@ -3,7 +3,7 @@
  ********************
  */
 
-import { pipe, splitText, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
+import { pipe, splitText, errorMsg, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
 
 const tokenizeChecker = {
   isEnd (token, arrStatus, objStatus) {
@@ -27,7 +27,7 @@ const addDataToItem = (type, data) => {
       typeChecker(data.tmp);
       data.newItem[data.tmpKey] = data.tmp
     }
-    else throw Error(`':'이 누락된 객체표현이 있습니다.`);
+    else throw Error(errorMsg.objectColonFail);
   }
   data.tmp = '';
   data.tmpKey = '';
