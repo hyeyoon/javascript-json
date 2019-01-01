@@ -18,22 +18,13 @@ const errorMsg = {
   objectColonFail: `':'이 누락된 객체표현이 있습니다.`,
 }
 
-const validateType = data => {
+const validateIsArrayOrIsObject = data => {
   if (checker.isArray(data) || checker.isObject(data)) return data
   else throw Error (errorMsg.dataFail);
 }
 
-// Array가 함수인지 확인하는 함수
-// const checkIsArray = splitList => {
-//   if (checker.isArray(splitList) === 'array') splitList;
-//   else console.error('배열형태의 문자열을 입력해주세요.');
-// };
-
 // 처음과 끝을 제외한 결과를 리턴하는 함수
 const removeBracket = item => item.slice(1,-1);
-
-// 배열 중 공백을 제외한 token을 리턴하는 함수
-const trimList = list => list.filter(item => item !== " ");
 
 const checkIsComma = item => item === ',';
 
@@ -83,4 +74,4 @@ const typeChecker = item => {
   }
 }
 
-export { pipe, splitText, errorMsg, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker }
+export { pipe, splitText, errorMsg, validateIsArrayOrIsObject, removeBracket, checkIsComma, checkIsColon, checker, typeChecker }

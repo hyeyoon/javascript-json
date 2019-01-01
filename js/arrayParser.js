@@ -3,7 +3,7 @@
  ********************
  */
 
-import { pipe, splitText, errorMsg, validateType, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
+import { pipe, splitText, errorMsg, validateIsArrayOrIsObject, removeBracket, checkIsComma, checkIsColon, checker, typeChecker } from './utility.js';
 
 const tokenizeChecker = {
   isEnd (token, arrStatus, objStatus) {
@@ -98,7 +98,7 @@ const makeChild = (value, type, key) => {
 }
 
 const tokenize = pipe(
-  validateType,
+  validateIsArrayOrIsObject,
   splitText,
   tokenizeList
 )
@@ -128,3 +128,5 @@ const parseObject = (currentParseData, curr) => {
 const str = "['1a3',[null,false,['11',[112233],{easy : ['hello', {a:'a'}, 'world']},112],55, '99'],{a:'str', b:[912,[5656,33],{key : 'innervalue', newkeys: [1,2,3,4,5]}]}, true]"
 const result = arrayParser(str);
 console.log('result:', JSON.stringify(result, null, 2));
+
+export { tokenizeChecker, addDataToItem, tokenizeList, parseData, parseReducer, makeChild, arrayParser, parseObject }
