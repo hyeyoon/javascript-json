@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "lite-server",
-    "start": "nodemon --exec babel-node run.js"
+    "test": "nodemon --exec babel-node run.js"
   },
   "dependencies": {
     "fs": "0.0.1-security",

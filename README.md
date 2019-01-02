@@ -12,7 +12,8 @@
 ## 실행결과
 
 ```
-`var str = "[123, 22, 33]";var result = ArrayParser(str);console.log(JSON.stringify(result, null, 2));`
+var str = "[123, 22, 33]";
+var result = ArrayParser(str);console.log(JSON.stringify(result, null, 2));
 ```
 
 ## STEP2. 2중 중첩 배열 분석
@@ -26,14 +27,13 @@
 * 중첩된 배열 원소도 역시, 숫자데이터만 존재한다.
 * 중첩된 결과는 child 부분에 추가해서 결과가 표현돼야 한다.
 
-* * *
-
 ## 실행결과
 
 ```
-`var str = var s = "[123,[22],33, [1,2,3,4,5]]";var result = ArrayParser(str);console.log(JSON.stringify(result, null, 2));`
-`*//배열안의 배열 같은경우, 다음과 같이 표현될 수 있다(예시)*
-     { type: 'array', value: ArrayObject, child: [{type:'number', value:22, child:[]}] }`
+var str = var s = "[123,[22],33, [1,2,3,4,5]]";
+var result = ArrayParser(str);console.log(JSON.stringify(result, null, 2));
+//배열안의 배열 같은경우, 다음과 같이 표현될 수 있다(예시)
+{ type: 'array', value: ArrayObject, child: [{type:'number', value:22, child:[]}] }
 ```
 
 ## STEP3. 무한 중첩된 배열구조 / STEP4. 여러가지 Type 대응
@@ -47,15 +47,13 @@
 * 프로그래밍 설계를 같이 PR한다.
 * hint : 중첩문제를 풀기 위해 stack구조를 활용해서 구현할 수도 있다.
 
-* * *
-
 ## 실행결과
 
 ```
-`var str = "[123,[22,23,[11,[112233],112],55],33]";var result = ArrayParser(str);console.log(JSON.stringify(result, null, 2));
-*//중첩된 배열을 분석했음으로, 결과 역시 중첩된 객체형태이다.*`
+var str = "[123,[22,23,[11,[112233],112],55],33]";var result = ArrayParser(str);
+console.log(JSON.stringify(result, null, 2));
+//중첩된 배열을 분석했음으로, 결과 역시 중첩된 객체형태이다.
 ```
-
 
 
 ## 설계
@@ -169,3 +167,30 @@ var result = ArrayParser(str);
   - 객체가 내부에 있는 경우, colon을 누락했는지 확인하는 코드 추가
 * 그 외 엄격한 검사 로직을 1개 추가하고 이를 검증하는 코드를 구현한다.
   - 기존 타입 검사하는 함수를 활용해서 addDataToItem 함수에서 타입 검증 과정 추가.
+
+## STEP7. 테스트 코드 작성
+
+## 요구사항
+* 테스트 가능한test함수와 expect.toBe메서드를 만든다.
+* test함수와 expect객체 그리고 toBe메서드는 별도의 자바스크립트 파일로 만들고, 이를 export/require를 통해서 nodeJS환경에서 테스트 할 수 있어야 한다.
+
+## 실행결과
+```
+두 개의 서로다른 양의 정수의 합이 올바르게 나온다  : OK
+양의 정수와 음의 정수의 합이 올바르게 나온다 : FAIL (targetValue is 10, expectValue is 0)
+```
+
+## 설계
+* spec 폴터 내부에 각 자바스크립트 파일에 대한 테스트 파일을 생성한다.
+* 테스트 함수인 test함수, expect객체 toBe, toBeTruthy, toBeFalsy 메서드를 test.js 파일에 생성한다.
+* run.js에서 각 테스트 파일을 불러와서 실행할 수 있도록 한다.  
+* babel과 nodemon 설치로 터미널 환경에서 테스트를 구동할 수 있도록 한다.
+
+## 실행방법
+  - repository를 다운로드 혹은 clone 한다.
+  - ```npm install```을 터미널에 입력해서 필요한 node modules 설치
+  - ```npm run test```를 입력해서 테스트 실행
+
+## 실행결과
+
+![테스트 예제](./images/test_example.png)
