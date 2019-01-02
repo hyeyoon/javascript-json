@@ -1,7 +1,3 @@
-// const fs = require('fs');
-// const files = fs.readdirSync('js');
-// console.log(files);
-
 const test = (name, fn) => {
   try {
     fn();
